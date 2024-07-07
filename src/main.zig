@@ -32,10 +32,25 @@ pub fn main() !void {
         debug.print("TODO\n", .{});
         std.process.exit(0);
     }
+
     if (res.args.address) |a| {
-        debug.print("--address = {s}\n", .{a});
+        var server = try setupServer(a);
+        defer server.deinit();
+        var conn = try server.accept();
+        var buf: [100]u8 = undefined;
+        const read = try conn.stream.readAll(&buf);
+        debug.print("read = {s}\n", .{buf[0..read]});
+        defer conn.close();
+
         std.process.exit(0);
     }
 
     debug.print("TODO\n", .{});
+}
+
+fn setupServer(a: []const u8) !std.net.Server {
+    const stdAddress = std.net.Address;
+    const address = try stdAddress.parseIp(a, 8080);
+    const options = stdAddress.ListenOptions{};
+    return try stdAddress.listen(address, options);
 }
